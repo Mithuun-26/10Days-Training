@@ -32,6 +32,7 @@ public class Task1 {
 			System.out.println("Salary for your Performance " + New_Salary);
 		} else {
 			System.out.println("Enter Your Performance Rating:");
-		}obj.close();
+		}
+		obj.close();
 	}
 }
