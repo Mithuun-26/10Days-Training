@@ -33,6 +33,6 @@ public class Task4 {
 			System.out.println("Not Eligible");
 		} else {
 			System.out.println("Enter Valid Mark and Attendence");
-		}
+		}sc.close();
 	}
 }
