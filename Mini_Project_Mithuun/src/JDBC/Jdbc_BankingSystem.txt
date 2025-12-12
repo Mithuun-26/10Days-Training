@@ -1,0 +1,132 @@
+package JDBC;
+import java.sql.*;
+import java.util.Scanner;
+public class Jdbc_BankingSystem {
+	public static void main(String[] args) throws Exception {		
+		Class.forName("com.mysql.cj.jdbc.Driver");		
+		Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankingsystem", "root", "");
+		Scanner sc = new Scanner(System.in);
+		int choice;
+		do {
+			System.out.println("\n----- Banking System -----");
+			System.out.println("1. Check Balance");
+			System.out.println("2. Deposit Money");
+			System.out.println("3. Withdraw Money");
+			System.out.println("4. View Mini-Statement");
+			System.out.println("5. Exit");
+			System.out.print("Enter your choice: ");
+			choice = sc.nextInt();
+			sc.nextLine();
+
+			switch (choice) {
+			case 1:
+			    System.out.print("Enter AccountNumber to Check balance : ");
+			    int searchacc_no  = sc.nextInt();
+
+			    PreparedStatement searchStmt = con.prepareStatement("SELECT * FROM userdetails WHERE accountNumber = ?");
+			    searchStmt.setInt(1, searchacc_no);
+			    ResultSet searchAc = searchStmt.executeQuery();
+
+			    if (searchAc.next()) {
+			        System.out.println("\n--- Account Found ---");
+			        System.out.println("AccountNumber : " + searchAc.getInt("accountNumber"));
+			        System.out.println("Account Holder Name : " + searchAc.getString("holderName"));
+			        System.out.println("Account Balance     : " + searchAc.getInt("balance"));
+			    } else {
+			        System.out.println("❌ Account not found.");
+			    }
+			    break;
+			case 2:
+			    System.out.print("Enter AccountNumber to Deposit Money : ");
+			    int updateBalance = sc.nextInt();
+			    sc.nextLine();     
+   			    System.out.print("Enter Amount : ");
+			    int depositAmount = sc.nextInt();	    
+			    PreparedStatement getBal = con.prepareStatement(
+			        "SELECT balance FROM userdetails WHERE accountNumber = ?"
+			    );
+			    getBal.setInt(1, updateBalance);
+			    ResultSet rs = getBal.executeQuery();
+			    if (rs.next()) {
+			        int currentBalance = rs.getInt("balance");			        
+			        int updatedBalance = currentBalance + depositAmount;			        
+			        PreparedStatement updateStmt = con.prepareStatement(
+			            "UPDATE userdetails SET balance = ? WHERE accountNumber = ?"
+			        );
+			        updateStmt.setInt(1, updatedBalance);
+			        updateStmt.setInt(2, updateBalance);
+			        int updated = updateStmt.executeUpdate();
+			        if (updated > 0)
+			            System.out.println("✅ Amount Deposit Updated Successfully!");
+			        else
+			            System.out.println("❌ Deposit Failed.");
+			    } else {
+			        System.out.println("❌ Account Number Not Found.");
+			    }
+			    break;
+			case 3:
+			    System.out.print("Enter AccountNumber to Withdraw Money : ");
+			    int acc = sc.nextInt();
+			    sc.nextLine(); 			    
+			    PreparedStatement getwit = con.prepareStatement("SELECT balance FROM userdetails WHERE accountNumber = ?");
+			    getwit.setInt(1, acc);
+			    ResultSet withdraw = getwit.executeQuery();
+			    if (withdraw.next()) {
+			        int oldBalance = withdraw.getInt("balance");
+			        System.out.print("Enter Withdraw Amount : ");
+			        int withdraw1 = sc.nextInt();
+			        if (withdraw1 > oldBalance) {
+			            System.out.println("❌ Insufficient Balance!");
+			            break;
+			        }			        
+			        int newBalance = oldBalance - withdraw1;			        
+			        PreparedStatement updateStmt = con.prepareStatement(
+			                "UPDATE userdetails SET balance = ? WHERE accountNumber = ?");
+			        updateStmt.setInt(1, newBalance);
+			        updateStmt.setInt(2, acc);
+			        int updated = updateStmt.executeUpdate();
+			        if (updated > 0)
+			            System.out.println("✅ Withdraw Successful! New Balance: " + newBalance);
+			        else
+			            System.out.println("❌ Withdraw Failed.");
+			    } else {
+			        System.out.println("❌ Account Not Found.");
+			    }
+			    break;			
+			case 4:
+			    System.out.print("Enter Account Number to View Mini Statement : ");
+			    int accNo = sc.nextInt();
+			    sc.nextLine();			    
+			    PreparedStatement checkAcc = con.prepareStatement(
+			        "SELECT accountNumber FROM userdetails WHERE accountNumber = ?");
+			    checkAcc.setInt(1, accNo);
+			    ResultSet rs1 = checkAcc.executeQuery();
+			    if (!rs1.next()) {
+			        System.out.println("❌ Account Number Not Found!");
+			        break;
+			    }
+			    System.out.println("\n📄 Mini Statement (Last 5 Transactions):");
+			    PreparedStatement miniStmt = con.prepareStatement(
+			        "SELECT type, amount, dateTime FROM transactions WHERE accountNumber = ? ORDER BY dateTime DESC LIMIT 5");
+			    miniStmt.setInt(1, accNo);
+			    ResultSet ms = miniStmt.executeQuery();
+			    boolean found = false;
+			    while (ms.next()) {
+			        found = true;
+			        System.out.println(
+			            ms.getString("dateTime") + " | " +
+			            ms.getString("type") + " | ₹" +
+			            ms.getInt("amount"));
+			    }
+			    if (!found) {
+			        System.out.println("⚠️ No Transactions Found for this Account.");
+			    }
+			    break;
+			case 5:
+				System.out.println("👋 Exiting...");
+				break;
+			default:
+				System.out.println("❌ Invalid choice. Please try again.");
+			}
+		} while (choice != 5);
+}}
